@@ -4,10 +4,22 @@ import { useMemo, useState } from "react";
 import { AnalysisEditor } from "@/components/AnalysisEditor";
 import { InputForm } from "@/components/InputForm";
 import { StoryboardSection } from "@/components/StoryboardSection";
-import { AnalyzeResponse, ApiError, ApiSuccess, Platform, ProductInput, Scene, StoryboardResponse, Style, platformValues, styleValues } from "@/types/storyboard";
+import {
+  AnalyzeResponse,
+  ApiError,
+  ApiSuccess,
+  Platform,
+  ProductInput,
+  Scene,
+  StoryboardResponse,
+  Style,
+  platformValues,
+  styleValues
+} from "@/types/storyboard";
 
 const platforms: Platform[] = [...platformValues];
 const styles: Style[] = [...styleValues];
+
 function isApiError<T>(value: ApiSuccess<T> | ApiError): value is ApiError {
   return value.ok === false;
 }
@@ -18,7 +30,12 @@ function getApiErrorMessage<T>(value: ApiSuccess<T> | ApiError, fallback: string
 }
 
 export default function HomePage() {
-  const [input, setInput] = useState<ProductInput>({ productName: "", platform: "TikTok", style: "生活感", productDescription: "" });
+  const [input, setInput] = useState<ProductInput>({
+    productName: "",
+    platform: "TikTok",
+    style: "生活感",
+    productDescription: ""
+  });
   const [analysis, setAnalysis] = useState<AnalyzeResponse | null>(null);
   const [storyboard, setStoryboard] = useState<StoryboardResponse | null>(null);
   const [loading, setLoading] = useState<"analyze" | "generate" | null>(null);
@@ -26,22 +43,30 @@ export default function HomePage() {
 
   const markdown = useMemo(() => {
     if (!storyboard) return "";
-    return storyboard.scenes.map((scene) => `## Scene ${scene.sceneId}\n- 画面：${scene.visualDescription}\n- 字幕：${scene.subtitle}\n- Image Prompt：${scene.imagePrompt}\n- Video Prompt：${scene.videoPrompt}`).join("\n\n");
+    return storyboard.scenes
+      .map(
+        (scene) =>
+          `## Scene ${scene.sceneId}\n- 画面：${scene.visualDescription}\n- 字幕：${scene.subtitle}\n- Image Prompt：${scene.imagePrompt}\n- Video Prompt：${scene.videoPrompt}`
+      )
+      .join("\n\n");
   }, [storyboard]);
 
   const onAnalyze = async () => {
     setLoading("analyze");
     setError("");
+
     try {
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input)
       });
+
       const data = (await response.json()) as ApiSuccess<AnalyzeResponse> | ApiError;
       if (!response.ok || isApiError(data)) {
         throw new Error(getApiErrorMessage(data, "Analyze failed"));
       }
+
       setAnalysis(data.data);
       setStoryboard(null);
     } catch (e) {
@@ -53,18 +78,22 @@ export default function HomePage() {
 
   const onGenerate = async () => {
     if (!analysis) return;
+
     setLoading("generate");
     setError("");
+
     try {
       const response = await fetch("/api/storyboard", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ input, analysis })
       });
+
       const data = (await response.json()) as ApiSuccess<StoryboardResponse> | ApiError;
       if (!response.ok || isApiError(data)) {
         throw new Error(getApiErrorMessage(data, "Generate failed"));
       }
+
       setStoryboard(data.data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Generate failed");
@@ -74,8 +103,20 @@ export default function HomePage() {
   };
 
   const copyText = async (value: string) => navigator.clipboard.writeText(value);
-  const exportJson = () => storyboard && downloadBlob(new Blob([JSON.stringify(storyboard, null, 2)], { type: "application/json" }), "storyboard.json");
-  const exportMarkdown = () => markdown && downloadBlob(new Blob([markdown], { type: "text/markdown" }), "storyboard.md");
+
+  const exportJson = () => {
+    if (!storyboard) return;
+    downloadBlob(
+      new Blob([JSON.stringify(storyboard, null, 2)], { type: "application/json" }),
+      "storyboard.json"
+    );
+  };
+
+  const exportMarkdown = () => {
+    if (!markdown) return;
+    downloadBlob(new Blob([markdown], { type: "text/markdown" }), "storyboard.md");
+  };
+
   const exportExcel = async () => {
     if (!storyboard) return;
     const response = await fetch("/api/export", {
@@ -101,7 +142,11 @@ export default function HomePage() {
         onGenerate={onGenerate}
       />
 
-      {error && <section className="card"><p style={{ color: "#b91c1c" }}>{error}</p></section>}
+      {error && (
+        <section className="card">
+          <p style={{ color: "#b91c1c" }}>{error}</p>
+        </section>
+      )}
 
       {analysis && <AnalysisEditor analysis={analysis} onChange={setAnalysis} />}
 
