@@ -12,6 +12,11 @@ function isApiError<T>(value: ApiSuccess<T> | ApiError): value is ApiError {
   return value.ok === false;
 }
 
+function getApiErrorMessage<T>(value: ApiSuccess<T> | ApiError, fallback: string): string {
+  if (isApiError(value)) return value.error;
+  return fallback;
+}
+
 export default function HomePage() {
   const [input, setInput] = useState<ProductInput>({ productName: "", platform: "TikTok", style: "生活感", productDescription: "" });
   const [analysis, setAnalysis] = useState<AnalyzeResponse | null>(null);
@@ -35,7 +40,7 @@ export default function HomePage() {
       });
       const data = (await response.json()) as ApiSuccess<AnalyzeResponse> | ApiError;
       if (!response.ok || isApiError(data)) {
-        throw new Error(isApiError(data) ? data.error : "Analyze failed");
+        throw new Error(getApiErrorMessage(data, "Analyze failed"));
       }
       setAnalysis(data.data);
       setStoryboard(null);
@@ -58,7 +63,7 @@ export default function HomePage() {
       });
       const data = (await response.json()) as ApiSuccess<StoryboardResponse> | ApiError;
       if (!response.ok || isApiError(data)) {
-        throw new Error(isApiError(data) ? data.error : "Generate failed");
+        throw new Error(getApiErrorMessage(data, "Generate failed"));
       }
       setStoryboard(data.data);
     } catch (e) {
