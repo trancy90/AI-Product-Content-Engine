@@ -1,7 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-/** @type {import('next').NextConfig} */
-const nextConfig = {
   experimental: {
     typedRoutes: true
   },
